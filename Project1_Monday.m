@@ -37,10 +37,15 @@ H_z = zeros(2,num_of_nodes_x,num_of_nodes_y); % H_z-field - row one: L+1/2, row 
 Time = 2*num_of_nodes_x; % total time steps
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for L = 1:Time % Time March
-    for j = 1:num_of_nodes_x + 2*pml_offset_y % Z-direction (up/down)
-        for i = 1:num_of_nodes_y + 2*pml_offset_x % Y- direction (left/right)
+    for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
+        for i = 1:num_of_nodes_x + 2*pml_offset_x % Y- direction (left/right)
+%%%%%%%%%%%%% Boundary region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            if ((i >= num_of_nodes_x+pml_offset_x) ||...
+                    (j>=num_of_nodes_y+pml_offset_y) || (i == 1)...
+                    || (j == 1))
+                location = 'boundary';
 %%%%%%%%%%%%% PML region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if((i <= pml_offset_x) || (j <= pml_offset_y) ||...
+            elseif((i <= pml_offset_x) || (j <= pml_offset_y) ||...
                     (i >= num_of_nodes_x) || (j >= num_of_nodes_y))              
                 location = 'PML';
 %%%%%%%%%%%%% interface region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%                
@@ -57,7 +62,10 @@ for L = 1:Time % Time March
                 location = 'upper';
             end
 switch location
-    case 'pml'
+    case 'boundary'
+        % PEC condition for boundaries, tangential E-fields are continuous
+        E_x(:,i,j) = 0;        
+    case 'PML'
         
         
     case 'interface'
