@@ -1,7 +1,6 @@
 %% Project #1
 % Authors: Adedayo Lawal and Blake Levy
 clc;clear;
-start = tic;
 %% Set up Parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
 c = 299792458; % speed of light in free space
@@ -46,6 +45,7 @@ for L = 2:Time
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for L = 1:Time % Time March
+    tic; % start timer
     for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
         for i = 1:num_of_nodes_x + 2*pml_offset_x % Y- direction (left/right)
 %%%%%%%%%%%%% Boundary region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,12 +124,11 @@ end
             
         end
     end
-    stop = toc;
-    display(toc);
     % Update the row vectors
     H_y(2,:,:) = H_y(1,:,:);   
     H_z(2,:,:) = H_z(1,:,:);    
     E_x(2,:,:) = E_x(1,:,:);
+    display(toc); % Stop timer
 end
 
 
