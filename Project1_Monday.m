@@ -1,6 +1,7 @@
 %% Project #1
 % Authors: Adedayo Lawal and Blake Levy
 clc;clear;
+start = tic;
 %% Set up Parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
 c = 299792458; % speed of light in free space
@@ -21,7 +22,7 @@ lambda_bottom = c_bottom/f; % wavelength of bottom slab
 num_of_wavelengths = 50; % propagate 120 wavelengths in X,Y-direction
 b = num_of_wavelengths*lambda_top; % Width of computational domain
 a = num_of_wavelengths*lambda_top; % Height of computational domain
-num_of_nodes_x = 1000;
+num_of_nodes_x = num_of_wavelengths*10;
 num_of_nodes_y = num_of_nodes_x;
 delx = b/num_of_nodes_x; % space discretization
 dely = a/num_of_nodes_y;
@@ -35,6 +36,14 @@ E_x = zeros(2,num_of_nodes_x,num_of_nodes_y); % E-field - row one: L+1, row two:
 H_y = zeros(2,num_of_nodes_x,num_of_nodes_y); % H_y-field - row one: L+1/2, row two: L-1/2
 H_z = zeros(2,num_of_nodes_x,num_of_nodes_y); % H_z-field - row one: L+1/2, row two: L-1/2
 Time = 2*num_of_nodes_x; % total time steps
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up Source %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+source_x = num_of_nodes_x/2; % x-position of source centered on X-axis
+source_y = floor((2/3)*num_of_nodes_y); % y-position of source on top slab
+J = zeros(1,Time); % create source in time-domain
+for L = 2:Time
+    J(L) = exp(-(((L-1)*delt-t_d)^2)/(2*sigma^2));    
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for L = 1:Time % Time March
     for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
@@ -73,7 +82,14 @@ switch location
         
         
     case 'source'
-        
+        % Finite Difference Equation (3) from our notes
+        H_z(1,i,j) = (delt/(delta*mu))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
+        % Finite Difference Equation (2) from our notes
+        H_y(1,i,j) = -1*(delt/(delta*mu))*(E_x(2,i,j+1)-E_x(2,i,j)) + H_y(2,i,j);        
+        % Finite Difference Equation (1) from our notes (Source Added)
+        E_x(1,i,j) = (delt/(delta*e_top))*...
+            (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j)...
+            -(delt/e_top)*J(L);        
         
         
     case 'lower'
@@ -108,6 +124,8 @@ end
             
         end
     end
+    stop = toc;
+    display(toc);
     % Update the row vectors
     H_y(2,:,:) = H_y(1,:,:);   
     H_z(2,:,:) = H_z(1,:,:);    
