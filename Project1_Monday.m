@@ -18,7 +18,7 @@ t_d = 8*sigma; % Allow for the pulse to be zero at t = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up geometry %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 lambda_top = c/f; % wavelength of top slab
 lambda_bottom = c_bottom/f; % wavelength of bottom slab
-num_of_wavelengths = 50; % propagate 120 wavelengths in X,Y-direction
+num_of_wavelengths = 16; % propagate 16 wavelengths in X,Y-direction
 b = num_of_wavelengths*lambda_top; % Width of computational domain
 a = num_of_wavelengths*lambda_top; % Height of computational domain
 num_of_nodes_x = num_of_wavelengths*10;
