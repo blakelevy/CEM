@@ -7,7 +7,7 @@ c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
 epsilon = 1/(mu*c^2); % permitivity of free space
 e_top = epsilon; % relative permitivity of top slab (free space)
-e_bottom = 1*epsilon; % relative permitivity of bottom slab
+e_bottom = 4*epsilon; % relative permitivity of bottom slab
 c_bottom = 1/sqrt(e_bottom*mu);% relative wave speed in bottom slab
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up gaussian pulse %%%%%%%%%%%%%%%%%%%%%%
 f = 1e6; % Center Frequency  of Gaussian Pulse = 1 MHz
@@ -45,7 +45,7 @@ for L = 2:Time
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for L = 1:Time % Time March
-%     tic; % start timer
+    tic; % start timer
     for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
         for i = 1:num_of_nodes_x + 2*pml_offset_x % Y- direction (left/right)
 %%%%%%%%%%%%% Boundary region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +88,7 @@ switch location
         % epsilon
         E_x(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
             (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-        E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
+        
         
     case 'source'
 %         % Finite Difference Equation (3) from our notes
@@ -138,11 +138,11 @@ end
     H_y(2,:,:) = H_y(1,:,:);   
     H_z(2,:,:) = H_z(1,:,:);    
     E_x(2,:,:) = E_x(1,:,:);
-%     display(toc); % Stop timer
+    display(toc); % Stop timer
     E = reshape(E_x(1,:,:),[num_of_nodes_x num_of_nodes_y]);
     H_y_latest = reshape(H_y(1,:,:),[num_of_nodes_x num_of_nodes_y]);
-    pcolor(E)
-pause(.1)
+    surf(E)
+
 end
 
 
