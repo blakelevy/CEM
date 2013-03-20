@@ -7,7 +7,7 @@ c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
 epsilon = 1/(mu*c^2); % permitivity of free space
 e_top = epsilon; % relative permitivity of top slab (free space)
-e_bottom = 1*epsilon; % relative permitivity of bottom slab
+e_bottom = 4*epsilon; % relative permitivity of bottom slab
 c_bottom = 1/sqrt(e_bottom*mu);% relative wave speed in bottom slab
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up gaussian pulse %%%%%%%%%%%%%%%%%%%%%%
 f = 1e6; % Center Frequency  of Gaussian Pulse = 1 MHz
