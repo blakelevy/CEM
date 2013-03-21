@@ -168,7 +168,7 @@ switch location
     otherwise
         
 end
-          
+        % test comment  
         end
     end
     % Update the row vectors
