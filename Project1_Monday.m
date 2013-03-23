@@ -5,8 +5,8 @@ clc;clear;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
 c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
-sigma_x = 1; % conductivity for PML region X (Y)-direction
-sigma_y = 1; % conductivity for PML region Y (Z)-direction
+sigma_x = 1.1; % conductivity for PML region X (Y)-direction
+sigma_y = 1.1; % conductivity for PML region Y (Z)-direction
 epsilon = 1/(mu*c^2); % permitivity of free space
 e_top = epsilon; % relative permitivity of top slab (free space)
 e_bottom = 4*epsilon; % relative permitivity of bottom slab
@@ -29,8 +29,8 @@ delx = b/num_of_nodes_x; % space discretization
 dely = a/num_of_nodes_y;
 delta = dely;
 delt = delx/(sqrt(2)*c); % time discretization
-pml_offset_x = 10; % additional thickness of boundary in X-direction
-pml_offset_y = 10; % additional thickness of boundary in Y-direction
+pml_offset_x = 20; % additional thickness of boundary in X-direction
+pml_offset_y = 20; % additional thickness of boundary in Y-direction
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up E,H,T, matrices%%%%%%%%%%%%%%%%%%%%%%
 E_x = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y); % E-field - row one: L+1, row two: L
@@ -46,6 +46,8 @@ Time = 3*num_of_nodes_x; % total time steps
 source_x = num_of_nodes_x/2; % x-position of source centered on X-axis
 source_y = floor((2/3)*num_of_nodes_y); % y-position of source on top slab
 J = zeros(1,Time); % create source in time-domain
+f1 = figure(1);
+f2 = figure(2);
 for L = 2:Time
     J(L) = exp(-(((L-1)*delt-t_d)^2)/(2*sigma^2));    
 end
@@ -62,9 +64,40 @@ for L = 1:Time % Time March
                     || (j == 1))
                 location = 'boundary';
 %%%%%%%%%%%%% PML region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            elseif((i <= pml_offset_x) || (j <= pml_offset_y) ||...
-                    (i >= num_of_nodes_x +pml_offset_x) || (j >= num_of_nodes_y + pml_offset_y))              
-                location = 'PML';
+%%%%%%%%%%%%%%%%%%%%%%%%% PML Left interface %%%%%%%%%%%%%%%%%%%%%%%                
+            elseif((i <= pml_offset_x) && ...
+                    ((j >= pml_offset_y) && (j < pml_offset_y + num_of_nodes_y/2)))              
+                location = 'PML_Left_Bottom';
+            elseif((i <= pml_offset_x) && ...
+                    ((j < pml_offset_y+num_of_nodes_y) && (j >= pml_offset_y + num_of_nodes_y/2)))              
+                location = 'PML_Left_Top';                
+            elseif((i <= pml_offset_x) && ...
+                    (j <= pml_offset_y))              
+                location = 'PML_Left_Bottom_Corner';   
+            elseif((i <= pml_offset_x) && ...
+                    (j >= pml_offset_y+num_of_nodes_y))              
+                location = 'PML_Left_Top_Corner';   
+%%%%%%%%%%%%%%%%%%%%%%%%% PML Right interface %%%%%%%%%%%%%%%%%%%%%%%                
+            elseif((i >= pml_offset_x+num_of_nodes_x) && ...
+                    ((j >= pml_offset_y) && (j < pml_offset_y + num_of_nodes_y/2)))              
+                location = 'PML_Right_Bottom';
+            elseif((i >= pml_offset_x+num_of_nodes_x) && ...
+                    ((j < pml_offset_y+num_of_nodes_y) && (j >= pml_offset_y + num_of_nodes_y/2)))              
+                location = 'PML_Right_Top';                
+            elseif((i >= pml_offset_x+num_of_nodes_x) && ...
+                    (j <= pml_offset_y))              
+                location = 'PML_Right_Bottom_Corner';   
+            elseif((i >= pml_offset_x+num_of_nodes_x) && ...
+                    (j >= pml_offset_y+num_of_nodes_y))              
+                location = 'PML_Right_Top_Corner';     
+%%%%%%%%%%%%%%%%%%%%%%%%% PML Bottom interface %%%%%%%%%%%%%%%%%%%%%%%                
+            elseif((j <= pml_offset_y) && ...
+                    ((i > pml_offset_x) && (i < pml_offset_x + num_of_nodes_x)))              
+                location = 'PML_Bottom';
+%%%%%%%%%%%%%%%%%%%%%%%%% PML Top interface %%%%%%%%%%%%%%%%%%%%%%%                                
+            elseif((j >= pml_offset_y+num_of_nodes_y) && ...
+                    ((i > pml_offset_x) && (i < pml_offset_x + num_of_nodes_x)))
+                location = 'PML_Top';                              
 %%%%%%%%%%%%% interface region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%                
             elseif (j == num_of_nodes_y/2 + pml_offset_y)
                 location = 'interface';
@@ -86,109 +119,162 @@ for L = 1:Time % Time March
                     E_xy(:,i,j) = 0;
                     H_y(:,i,j) = 0;
                     H_z(:,i,j) = 0; 
-                case 'PML'
-            %%%%%%%%%%%%%%%%%% PML - X configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
-                    if (((i < pml_offset_x) || (i > num_of_nodes_x + pml_offset_x)) &&...
-                            ((j < pml_offset_y + num_of_nodes_y) && (j > pml_offset_y)))
-                          if (j == num_of_nodes_y/2 + pml_offset_y)
-                              pml_e = (e_bottom+e_top)/2;                              
-                              sigma_mx = 1;
-                              sigma_ex = pml_e*sigma_mx/mu;
-                              sigma_my = 0; sigma_ey = pml_e*sigma_my/mu;                               
-                          elseif j < pml_offset_y + num_of_nodes_y/2
-                              sigma_mx = 1;
-                              sigma_ex = e_bottom*sigma_mx/mu;
-                              pml_e = e_bottom;
-                              sigma_my = 0; sigma_ey = e_bottom*sigma_my/mu;                                               
-                          else
-                              sigma_mx = 1;
-                              sigma_ex = e_top*sigma_mx/mu;
-                              pml_e = e_top;
-                              sigma_my = 0; sigma_ey = e_top*sigma_my/mu;                                                             
-                          end
-
-            %             sx = 1 + (sigma_x/(sqrt(-1)*w*e_bottom));
-            %             % Finite Difference Equation (3) from our notes
-            %             H_z(1,i,j) = (delt/(delta*mu*sx*sy))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
-            %             % Finite Difference Equation (2) from our notes
-            %             H_y(1,i,j) = -1*(delt/(delta*mu*sx*(sy^-1)))*(E_x(2,i,j+1)-E_x(2,i,j)) + H_y(2,i,j);        
-            %             % Finite Difference Equation (1) from our notes (Note: no source)
-            %             E_x(1,i,j) = (delt/(delta*e_bottom*(sx^-1)*(sy)))*...
-            %                 (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-            %             E_x(1,source_x,source_y) = -1*(delt/(e_top))*J(L);               
-
-            %%%%%%%%%%%%%%%%%%% PML - Y configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
-                    elseif (((i < num_of_nodes_x + pml_offset_x) && (i > pml_offset_x)) &&...
-                            ((j < pml_offset_y) || (j > pml_offset_y + num_of_nodes_y)))
-                          if j < pml_offset_y + num_of_nodes_y/2
-                              sigma_my = 1;
-                              sigma_ey = e_bottom*sigma_my/mu;
-                              pml_e = e_bottom;
-                              sigma_mx = 0; sigma_ex = e_bottom*sigma_mx/mu;                                                  
-                          else
-                              sigma_my = 1;
-                              sigma_ey = e_top*sigma_my/mu;
-                              pml_e = e_top;
-                              sigma_mx = 0; sigma_ex = e_top*sigma_mx/mu;                                                          
-                          end
-                        
-            %             sx = 1;
-            %             sy = 1 + (sigma_y/(sqrt(-1)*w*e_bottom));            
-            %             % Finite Difference Equation (3) from our notes
-            %             H_z(1,i,j) = (delt/(delta*mu*sx*sy))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
-            %             % Finite Difference Equation (2) from our notes
-            %             H_y(1,i,j) = -1*(delt/(delta*mu*sx*(sy^-1)))*(E_x(2,i,j+1)-E_x(2,i,j)) + H_y(2,i,j);        
-            %             % Finite Difference Equation (1) from our notes (Note: no source)
-            %             E_x(1,i,j) = (delt/(delta*e_bottom*(sx^-1)*(sy)))*...
-            %                 (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-            %             E_x(1,source_x,source_y) = -1*(delt/(e_top))*J(L);            
-            %%%%%%%%%%%%%%%%%%% PML - Corner configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%            
-                    else
-                          if j < pml_offset_y + num_of_nodes_y/2
-                              sigma_mx = 1;
-                              sigma_ex = e_bottom*sigma_mx/mu;
-                              pml_e = e_bottom;
-                              sigma_my = 1; sigma_ey = e_bottom*sigma_my/mu;                                                  
-                          else
-                              sigma_mx = 1;
-                              sigma_ex = e_top*sigma_mx/mu;
-                              pml_e = e_top;
-                              sigma_my = 1; sigma_ey = e_top*sigma_my/mu;                                                          
-                          end                                                
-            %             sx = 1 + (sigma_x/(sqrt(-1)*w*e_bottom));                        
-            %             sy = 1 + (sigma_y/(sqrt(-1)*w*e_bottom));
-            %             % Finite Difference Equation (3) from our notes
-            %             H_z(1,i,j) = (delt/(delta*mu*sx*sy))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
-            %             % Finite Difference Equation (2) from our notes
-            %             H_y(1,i,j) = -1*(delt/(delta*mu*sx*(sy^-1)))*(E_x(2,i,j+1)-E_x(2,i,j)) + H_y(2,i,j);        
-            %             % Finite Difference Equation (1) from our notes (Note: no source)
-            %             E_x(1,i,j) = (delt/(delta*e_bottom*(sx^-1)*(sy)))*...
-            %                 (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-            %             E_x(1,source_x,source_y) = -1*(delt/(e_top))*J(L);           
-
-
-                    end
-                          % Finite Difference Equation (4) from our notes
-                          H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
-                              (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
-                              (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
-                              ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
-                          % Finite Difference Equation (3) from our notes
-                          H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
-                              (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
-                              (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
-                              ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
-                          % Finite Difference Equation (2) from our notes
-                          E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
-                            (H_y(1,i,j)-H_y(1,i,j-1)) + ...
-                            (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
-                            ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
-                          % Finite Difference Equation (1) from our notes
-                          E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
-                            (H_z(1,i,j)-H_z(1,i-1,j)) + ...
-                            (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
-                            ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
-                          E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);
+                case {'PML_Left_Bottom','PML_Right_Bottom'}
+                    pml_e = e_bottom;                              
+                    sigma_mx = sigma_x;
+                    sigma_ex = pml_e*sigma_mx/mu;
+                    sigma_my = 0; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    % Finite Difference Equation (4) from our notes
+                    H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                      (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                    % Finite Difference Equation (3) from our notes
+                    H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                      (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                      ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
+                    % Finite Difference Equation (2) from our notes
+                    E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                    (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                    ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
+                    % Finite Difference Equation (1) from our notes
+                    E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
+                    (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
+                    ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
+                    E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);
+                case {'PML_Left_Top','PML_Right_Top'}
+                    pml_e = e_top;                              
+                    sigma_mx = sigma_x;
+                    sigma_ex = pml_e*sigma_mx/mu;
+                    sigma_my = 0; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    % Finite Difference Equation (4) from our notes
+                    H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                      (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                    % Finite Difference Equation (3) from our notes
+                    H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                      (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                      ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
+                    % Finite Difference Equation (2) from our notes
+                    E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                    (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                    ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
+                    % Finite Difference Equation (1) from our notes
+                    E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
+                    (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
+                    ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
+                    E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);   
+                case 'PML_Bottom'
+                    pml_e = e_bottom;                              
+                    sigma_mx = 0;
+                    sigma_ex = pml_e*sigma_mx/mu;
+                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    % Finite Difference Equation (4) from our notes
+                    H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                      (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                    % Finite Difference Equation (3) from our notes
+                    H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                      (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                      ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
+                    % Finite Difference Equation (2) from our notes
+                    E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                    (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                    ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
+                    % Finite Difference Equation (1) from our notes
+                    E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
+                    (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
+                    ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
+                    E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j); 
+                case 'PML_Top'
+                    pml_e = e_top;                              
+                    sigma_mx = 0;
+                    sigma_ex = pml_e*sigma_mx/mu;
+                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    % Finite Difference Equation (4) from our notes
+                    H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                      (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                    % Finite Difference Equation (3) from our notes
+                    H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                      (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                      ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
+                    % Finite Difference Equation (2) from our notes
+                    E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                    (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                    ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
+                    % Finite Difference Equation (1) from our notes
+                    E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
+                    (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
+                    ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
+                    E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j); 
+                case {'PML_Left_Bottom_Corner','PML_Right_Bottom_Corner'}
+                    pml_e = e_bottom;                              
+                    sigma_mx = sigma_x;
+                    sigma_ex = pml_e*sigma_mx/mu;
+                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    % Finite Difference Equation (4) from our notes
+                    H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                      (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                    % Finite Difference Equation (3) from our notes
+                    H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                      (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                      ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
+                    % Finite Difference Equation (2) from our notes
+                    E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                    (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                    ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
+                    % Finite Difference Equation (1) from our notes
+                    E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
+                    (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
+                    ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
+                    E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);   
+                case {'PML_Left_Top_Corner','PML_Right_Top_Corner'}
+                    pml_e = e_top;                              
+                    sigma_mx = sigma_x;
+                    sigma_ex = pml_e*sigma_mx/mu;
+                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    % Finite Difference Equation (4) from our notes
+                    H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                      (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                    % Finite Difference Equation (3) from our notes
+                    H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                      (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                      (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                      ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
+                    % Finite Difference Equation (2) from our notes
+                    E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                    (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                    ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
+                    % Finite Difference Equation (1) from our notes
+                    E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
+                    (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                    (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
+                    ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
+                    E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);                    
                 case 'interface'
                     % Finite Difference Equation (3) from our notes
                     H_z(1,i,j) = (delt/(delta*mu))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
@@ -267,8 +353,12 @@ end
     E = reshape(E_xy(1,:,:)+E_xz(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);    
     E_comp = E((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
-    imagesc(abs(E_comp))
+    set(0, 'CurrentFigure', f1)
+    %imagesc(abs(E_comp))
+    imagesc(abs(E))    
     colorbar
+    set(0, 'CurrentFigure', f2)    
+    plot(1:(num_of_nodes_y+2*pml_offset_y), E(source_x,:));
 pause(.1)
 end
 
