@@ -91,10 +91,12 @@ for L = 1:Time % Time March
                           if (j < j < pml_offset_y + num_of_nodes_y/2)
                               sigma_mx = 1;
                               sigma_ex = e_bottom*sigma_mx/mu;
+                              pml_e = e_bottom;
                               sigma_my = 0; sigma_ey = e_bottom*sigma_my/mu;                                               
                           else
                               sigma_mx = 1;
                               sigma_ex = e_top*sigma_mx/mu;
+                              pml_e = e_top;
                               sigma_my = 0; sigma_ey = e_top*sigma_my/mu;                                                             
                           end
 
@@ -114,10 +116,12 @@ for L = 1:Time % Time March
                           if (j < j < pml_offset_y + num_of_nodes_y/2)
                               sigma_my = 1;
                               sigma_ey = e_bottom*sigma_my/mu;
+                              pml_e = e_bottom;
                               sigma_mx = 0; sigma_ex = e_bottom*sigma_mx/mu;                                                  
                           else
                               sigma_my = 1;
                               sigma_ey = e_top*sigma_my/mu;
+                              pml_e = e_top;
                               sigma_mx = 0; sigma_ex = e_top*sigma_mx/mu;                                                          
                           end
                         
@@ -136,10 +140,12 @@ for L = 1:Time % Time March
                           if (j < j < pml_offset_y + num_of_nodes_y/2)
                               sigma_mx = 1;
                               sigma_ex = e_bottom*sigma_mx/mu;
+                              pml_e = e_bottom;
                               sigma_my = 1; sigma_ey = e_bottom*sigma_my/mu;                                                  
                           else
                               sigma_mx = 1;
                               sigma_ex = e_top*sigma_mx/mu;
+                              pml_e = e_top;
                               sigma_my = 1; sigma_ey = e_top*sigma_my/mu;                                                          
                           end                                                
             %             sx = 1 + (sigma_x/(sqrt(-1)*w*e_bottom));                        
@@ -166,15 +172,15 @@ for L = 1:Time % Time March
                               (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
                               ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_z(2,i,j);    
                           % Finite Difference Equation (2) from our notes
-                          E_xy(1,i,j) = ((2*delt)/(delta*(2*e_bottom+sigma_ey*delt)))*...
+                          E_xy(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
                             (H_y(1,i,j)-H_y(1,i,j-1)) + ...
-                            (2*e_bottom/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j) - ...
+                            (2*pml_e/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j) - ...
                             ((delt*sigma_ey)/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j);                                   
                           % Finite Difference Equation (1) from our notes
-                          E_xz(1,i,j) = ((2*delt)/(delta*(2*e_bottom+sigma_ex*delt)))*...
+                          E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
                             (H_z(1,i,j)-H_z(1,i-1,j)) + ...
-                            (2*e_bottom/(2*e_bottom+sigma_ex*delt))*E_xz(2,i,j) - ...
-                            ((delt*sigma_ex)/(2*e_bottom+sigma_ex*delt))*E_xz(2,i,j);                      
+                            (2*pml_e/(2*e_bottom+sigma_ex*delt))*E_xz(2,i,j) - ...
+                            ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
                           E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);
                 case 'interface'
                     % Finite Difference Equation (3) from our notes
