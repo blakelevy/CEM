@@ -84,7 +84,7 @@ switch location
 %%%%%%%%%%%%%%%%%% PML - X configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         if (((i < pml_offset_x) || (i > num_of_nodes_x + pml_offset_x)) &&...
                 ((j < pml_offset_y + num_of_nodes_y) && (j > pml_offset_y)))
-%             sy = 1;
+             sy = 1;
 %             sx = 1 + (sigma_x/(sqrt(-1)*w*e_bottom));
 %             % Finite Difference Equation (3) from our notes
 %             H_z(1,i,j) = (delt/(delta*mu*sx*sy))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
