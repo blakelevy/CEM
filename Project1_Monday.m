@@ -43,8 +43,8 @@ E_xy = zeros(size(E_x));
 Time = 3*num_of_nodes_x; % total time steps
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up Source %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-source_x = num_of_nodes_x/2; % x-position of source centered on X-axis
-source_y = floor((2/3)*num_of_nodes_y); % y-position of source on top slab
+source_x = (2*pml_offset_x +num_of_nodes_x)/2; % x-position of source centered on X-axis
+source_y = floor((2/3)*(2*pml_offset_y +num_of_nodes_y)); % y-position of source on top slab
 J = zeros(1,Time); % create source in time-domain
 f1 = figure(1);
 f2 = figure(2);
@@ -284,22 +284,15 @@ for L = 1:Time % Time March
                     % epsilon
                     E_x(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-
+                    % Split-field equations for PML
                     E_xy(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
                         (-H_y(1,i,j)+H_y(1,i,j-1)) + E_xy(2,i,j);
+                    % Split-field equations for PML
                     E_xz(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);
             %           E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);   
 
-                case 'source'
-            %         % Finite Difference Equation (3) from our notes
-            %         H_z(1,i,j) = (delt/(delta*mu))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
-            %         % Finite Difference Equation (2) from our notes
-            %         H_y(1,i,j) = -1*(delt/(delta*mu))*(E_x(2,i,j+1)-E_x(2,i,j)) + H_y(2,i,j);        
-            %         % Finite Difference Equation (1) from our notes (Source Added)
-            %         E_x(1,i,j) = (delt/(delta*e_top))*...
-            %             (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j)...
-            %             -(delt/e_top)*J(L);        
+                case 'source'       
                       E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
                       E_xy(1,source_x,source_y) = 0;
                       E_xz(1,source_x,source_y) = -1*(delt/e_top)*J(L);                    
@@ -312,9 +305,10 @@ for L = 1:Time % Time March
                     % Finite Difference Equation (1) from our notes (Note: no source)
                     E_x(1,i,j) = (delt/(delta*e_bottom))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-                    
+                    % Split-field equations for PML
                     E_xy(1,i,j) = (delt/(delta*e_bottom))*...
                         (-H_y(1,i,j)+H_y(1,i,j-1)) + E_xy(2,i,j);
+                    % Split-field equations for PML
                     E_xz(1,i,j) = (delt/(delta*e_bottom))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);                    
             %         E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);        
@@ -327,9 +321,10 @@ for L = 1:Time % Time March
                     % Finite Difference Equation (1) from our notes (Note: no source)
                     E_x(1,i,j) = (delt/(delta*e_top))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
-                    
+                    % Split-field equations for PML
                     E_xy(1,i,j) = (delt/(delta*e_top))*...
                         (-H_y(1,i,j)+H_y(1,i,j-1)) + E_xy(2,i,j);
+                    % Split-field equations for PML
                     E_xz(1,i,j) = (delt/(delta*e_top))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);                      
             %         E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
@@ -338,10 +333,13 @@ for L = 1:Time % Time March
             end 
     % test comment  
         end
+    % Hard source condition
     E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L); 
+    % Hard source condition including PML region
     E_xy(1,source_x,source_y) = 0;
+    % Hard source condition including PML region
     E_xz(1,source_x,source_y) = -1*(delt/e_top)*J(L);     
-end
+    end
     % Update the row vectors
     H_y(2,:,:) = H_y(1,:,:);   
     H_z(2,:,:) = H_z(1,:,:);
@@ -350,43 +348,16 @@ end
     E_x(2,:,:) = E_x(1,:,:);
 %     display(toc); % Stop timer
     %E = reshape(E_x(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
+    % Reshape E-field matrix for image output
     E = reshape(E_xy(1,:,:)+E_xz(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);    
+    % E-field computational domain
     E_comp = E((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     set(0, 'CurrentFigure', f1)
     %imagesc(abs(E_comp))
-    imagesc(abs(E))    
+    imagesc(abs(E_comp))
     colorbar
     set(0, 'CurrentFigure', f2)    
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(source_x,:));
 pause(.1)
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
