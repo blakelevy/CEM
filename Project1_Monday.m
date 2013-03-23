@@ -40,7 +40,7 @@ H_z = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up PML Exy and Exz matrices%%%%%%%%%%%%%
 E_xz = zeros(size(E_x));
 E_xy = zeros(size(E_x));
-Time = 2*num_of_nodes_x; % total time steps
+Time = 3*num_of_nodes_x; % total time steps
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up Source %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 source_x = num_of_nodes_x/2; % x-position of source centered on X-axis
@@ -54,8 +54,8 @@ for L = 1:Time % Time March
     tic; % start timer
 %     for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
 %         for i = 1:num_of_nodes_x + 2*pml_offset_x % Y- direction (left/right)
-    for j = 2:num_of_nodes_y + pml_offset_y % Z-direction (up/down)
-        for i = 2:num_of_nodes_x + pml_offset_x % Y- direction (left/right)
+    for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
+        for i = 1:num_of_nodes_x + 2*pml_offset_x % Y- direction (left/right)
 %%%%%%%%%%%%% Boundary region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if ((i >= num_of_nodes_x+2*pml_offset_x) ||...
                     (j>=num_of_nodes_y+2*pml_offset_y) || (i == 1)...
@@ -82,13 +82,20 @@ for L = 1:Time % Time March
                 case 'boundary'
                     % PEC condition for boundaries, tangential E-fields are continuous
                     E_x(:,i,j) = 0;
+                    E_xz(:,i,j) = 0;
+                    E_xy(:,i,j) = 0;
                     H_y(:,i,j) = 0;
                     H_z(:,i,j) = 0; 
                 case 'PML'
             %%%%%%%%%%%%%%%%%% PML - X configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
                     if (((i < pml_offset_x) || (i > num_of_nodes_x + pml_offset_x)) &&...
                             ((j < pml_offset_y + num_of_nodes_y) && (j > pml_offset_y)))
-                          if (j < j < pml_offset_y + num_of_nodes_y/2)
+                          if (j == num_of_nodes_y/2 + pml_offset_y)
+                              pml_e = (e_bottom+e_top)/2;                              
+                              sigma_mx = 1;
+                              sigma_ex = pml_e*sigma_mx/mu;
+                              sigma_my = 0; sigma_ey = pml_e*sigma_my/mu;                               
+                          elseif j < pml_offset_y + num_of_nodes_y/2
                               sigma_mx = 1;
                               sigma_ex = e_bottom*sigma_mx/mu;
                               pml_e = e_bottom;
@@ -113,7 +120,7 @@ for L = 1:Time % Time March
             %%%%%%%%%%%%%%%%%%% PML - Y configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
                     elseif (((i < num_of_nodes_x + pml_offset_x) && (i > pml_offset_x)) &&...
                             ((j < pml_offset_y) || (j > pml_offset_y + num_of_nodes_y)))
-                          if (j < j < pml_offset_y + num_of_nodes_y/2)
+                          if j < pml_offset_y + num_of_nodes_y/2
                               sigma_my = 1;
                               sigma_ey = e_bottom*sigma_my/mu;
                               pml_e = e_bottom;
@@ -137,7 +144,7 @@ for L = 1:Time % Time March
             %             E_x(1,source_x,source_y) = -1*(delt/(e_top))*J(L);            
             %%%%%%%%%%%%%%%%%%% PML - Corner configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%            
                     else
-                          if (j < j < pml_offset_y + num_of_nodes_y/2)
+                          if j < pml_offset_y + num_of_nodes_y/2
                               sigma_mx = 1;
                               sigma_ex = e_bottom*sigma_mx/mu;
                               pml_e = e_bottom;
@@ -170,16 +177,16 @@ for L = 1:Time % Time March
                           H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
                               (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
                               (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
-                              ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_z(2,i,j);    
+                              ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_y(2,i,j);    
                           % Finite Difference Equation (2) from our notes
-                          E_xy(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
+                          E_xy(1,i,j) = -1*((2*delt)/(delta*(2*pml_e+sigma_ey*delt)))*...
                             (H_y(1,i,j)-H_y(1,i,j-1)) + ...
-                            (2*pml_e/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j) - ...
-                            ((delt*sigma_ey)/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j);                                   
+                            (2*pml_e/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j) - ...
+                            ((delt*sigma_ey)/(2*pml_e+sigma_ey*delt))*E_xy(2,i,j);                                   
                           % Finite Difference Equation (1) from our notes
                           E_xz(1,i,j) = ((2*delt)/(delta*(2*pml_e+sigma_ex*delt)))*...
                             (H_z(1,i,j)-H_z(1,i-1,j)) + ...
-                            (2*pml_e/(2*e_bottom+sigma_ex*delt))*E_xz(2,i,j) - ...
+                            (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
                             ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                      
                           E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);
                 case 'interface'
@@ -191,6 +198,11 @@ for L = 1:Time % Time March
                     % epsilon
                     E_x(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
+
+                    E_xy(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
+                        (-H_y(1,i,j)+H_y(1,i,j-1)) + E_xy(2,i,j);
+                    E_xz(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
+                        (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);
             %           E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);   
 
                 case 'source'
@@ -203,6 +215,8 @@ for L = 1:Time % Time March
             %             (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j)...
             %             -(delt/e_top)*J(L);        
                       E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
+                      E_xy(1,source_x,source_y) = 0;
+                      E_xz(1,source_x,source_y) = -1*(delt/e_top)*J(L);                    
 
                 case 'lower'
                     % Finite Difference Equation (3) from our notes
@@ -212,6 +226,11 @@ for L = 1:Time % Time March
                     % Finite Difference Equation (1) from our notes (Note: no source)
                     E_x(1,i,j) = (delt/(delta*e_bottom))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
+                    
+                    E_xy(1,i,j) = (delt/(delta*e_bottom))*...
+                        (-H_y(1,i,j)+H_y(1,i,j-1)) + E_xy(2,i,j);
+                    E_xz(1,i,j) = (delt/(delta*e_bottom))*...
+                        (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);                    
             %         E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);        
 
                 case 'upper'
@@ -222,20 +241,30 @@ for L = 1:Time % Time March
                     % Finite Difference Equation (1) from our notes (Note: no source)
                     E_x(1,i,j) = (delt/(delta*e_top))*...
                         (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
+                    
+                    E_xy(1,i,j) = (delt/(delta*e_top))*...
+                        (-H_y(1,i,j)+H_y(1,i,j-1)) + E_xy(2,i,j);
+                    E_xz(1,i,j) = (delt/(delta*e_top))*...
+                        (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);                      
             %         E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
                 otherwise
 
             end 
     % test comment  
         end
-    E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);  
+    E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L); 
+    E_xy(1,source_x,source_y) = 0;
+    E_xz(1,source_x,source_y) = -1*(delt/e_top)*J(L);     
 end
     % Update the row vectors
     H_y(2,:,:) = H_y(1,:,:);   
-    H_z(2,:,:) = H_z(1,:,:);    
+    H_z(2,:,:) = H_z(1,:,:);
+    E_xy(2,:,:) = E_xy(1,:,:);    
+    E_xz(2,:,:) = E_xz(1,:,:);
     E_x(2,:,:) = E_x(1,:,:);
 %     display(toc); % Stop timer
-    E = reshape(E_x(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
+    %E = reshape(E_x(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
+    E = reshape(E_xy(1,:,:)+E_xz(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);    
     E_comp = E((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     imagesc(abs(E_comp))
