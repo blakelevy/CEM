@@ -36,6 +36,10 @@ pml_offset_y = 10; % additional thickness of boundary in Y-direction
 E_x = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y); % E-field - row one: L+1, row two: L
 H_y = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y); % H_y-field - row one: L+1/2, row two: L-1/2
 H_z = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y); % H_z-field - row one: L+1/2, row two: L-1/2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up PML Exy and Exz matrices%%%%%%%%%%%%%
+E_xz = zeros(size(E_x));
+E_xy = zeros(size(E_x));
 Time = 2*num_of_nodes_x; % total time steps
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up Source %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -87,17 +91,13 @@ for L = 1:Time % Time March
                           if (j < j < pml_offset_y + num_of_nodes_y/2)
                               sigma_mx = 1;
                               sigma_ex = e_bottom*sigma_mx/mu;
-                              sigma_my = 0; sigma_ey = e_bottom*sigma_my/mu;
-                              % Finite Difference Equation (3) from our notes
-                              H_z(1,i,j) = (delt/(delta*mu))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
-                              % Finite Difference Equation (2) from our notes
-                              H_y(1,i,j) = -1*(delt/(delta*mu))*(E_x(2,i,j+1)-E_x(2,i,j)) + H_y(2,i,j);        
-                              % Finite Difference Equation (1) from our notes Note: Averaged
-                              % epsilon
-                              E_x(1,i,j) = (delt/(delta*((e_bottom+e_top)/2)))*...
-                                  (H_z(1,i,j)-H_z(1,i-1,j)-H_y(1,i,j)+H_y(1,i,j-1))+E_x(2,i,j);
+                              sigma_my = 0; sigma_ey = e_bottom*sigma_my/mu;                                               
                           else
+                              sigma_mx = 1;
+                              sigma_ex = e_top*sigma_mx/mu;
+                              sigma_my = 0; sigma_ey = e_top*sigma_my/mu;                                                             
                           end
+
             %             sx = 1 + (sigma_x/(sqrt(-1)*w*e_bottom));
             %             % Finite Difference Equation (3) from our notes
             %             H_z(1,i,j) = (delt/(delta*mu*sx*sy))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
@@ -111,6 +111,16 @@ for L = 1:Time % Time March
             %%%%%%%%%%%%%%%%%%% PML - Y configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%            
                     elseif (((i < num_of_nodes_x + pml_offset_x) && (i > pml_offset_x)) &&...
                             ((j < pml_offset_y) || (j > pml_offset_y + num_of_nodes_y)))
+                          if (j < j < pml_offset_y + num_of_nodes_y/2)
+                              sigma_my = 1;
+                              sigma_ey = e_bottom*sigma_my/mu;
+                              sigma_mx = 0; sigma_ex = e_bottom*sigma_mx/mu;                                                  
+                          else
+                              sigma_my = 1;
+                              sigma_ey = e_top*sigma_my/mu;
+                              sigma_mx = 0; sigma_ex = e_top*sigma_mx/mu;                                                          
+                          end
+                        
             %             sx = 1;
             %             sy = 1 + (sigma_y/(sqrt(-1)*w*e_bottom));            
             %             % Finite Difference Equation (3) from our notes
@@ -123,6 +133,15 @@ for L = 1:Time % Time March
             %             E_x(1,source_x,source_y) = -1*(delt/(e_top))*J(L);            
             %%%%%%%%%%%%%%%%%%% PML - Corner configuration %%%%%%%%%%%%%%%%%%%%%%%%%%%%            
                     else
+                          if (j < j < pml_offset_y + num_of_nodes_y/2)
+                              sigma_mx = 1;
+                              sigma_ex = e_bottom*sigma_mx/mu;
+                              sigma_my = 1; sigma_ey = e_bottom*sigma_my/mu;                                                  
+                          else
+                              sigma_mx = 1;
+                              sigma_ex = e_top*sigma_mx/mu;
+                              sigma_my = 1; sigma_ey = e_top*sigma_my/mu;                                                          
+                          end                                                
             %             sx = 1 + (sigma_x/(sqrt(-1)*w*e_bottom));                        
             %             sy = 1 + (sigma_y/(sqrt(-1)*w*e_bottom));
             %             % Finite Difference Equation (3) from our notes
@@ -136,7 +155,27 @@ for L = 1:Time % Time March
 
 
                     end
-
+                          % Finite Difference Equation (4) from our notes
+                          H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
+                              (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
+                              (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                              ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
+                          % Finite Difference Equation (3) from our notes
+                          H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
+                              (E_xz(2,i,j+1)-E_xz(2,i,j)+E_xy(2,i,j+1)-E_xy(2,i,j)) + ...
+                              (2*mu/(2*mu+sigma_my*delt))*H_y(2,i,j) - ...
+                              ((delt*sigma_my)/(2*mu+sigma_my*delt))*H_z(2,i,j);    
+                          % Finite Difference Equation (2) from our notes
+                          E_xy(1,i,j) = ((2*delt)/(delta*(2*e_bottom+sigma_ey*delt)))*...
+                            (H_y(1,i,j)-H_y(1,i,j-1)) + ...
+                            (2*e_bottom/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j) - ...
+                            ((delt*sigma_ey)/(2*e_bottom+sigma_ey*delt))*E_xy(2,i,j);                                   
+                          % Finite Difference Equation (1) from our notes
+                          E_xz(1,i,j) = ((2*delt)/(delta*(2*e_bottom+sigma_ex*delt)))*...
+                            (H_z(1,i,j)-H_z(1,i-1,j)) + ...
+                            (2*e_bottom/(2*e_bottom+sigma_ex*delt))*E_xz(2,i,j) - ...
+                            ((delt*sigma_ex)/(2*e_bottom+sigma_ex*delt))*E_xz(2,i,j);                      
+                          E_x(1,i,j) = E_xz(1,i,j)+E_xy(1,i,j);
                 case 'interface'
                     % Finite Difference Equation (3) from our notes
                     H_z(1,i,j) = (delt/(delta*mu))*(E_x(2,i+1,j)-E_x(2,i,j)) + H_z(2,i,j);
