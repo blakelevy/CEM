@@ -48,10 +48,14 @@ max_color_past = 1; % color map adjust
 source_x = (2*pml_offset_x +num_of_nodes_x)/2; % x-position of source centered on X-axis
 source_y = floor((2/3)*(2*pml_offset_y +num_of_nodes_y)); % y-position of source on top slab
 J = zeros(1,Time); % create source in time-domain
+Mz = zeros(1,Time); % create source in time-domain
+My = zeros(1,Time);
 f1 = figure(1);
 f2 = figure(2);
 for L = 2:Time
     J(L) = exp(-(((L-1)*delt-t_d)^2)/(2*sigma^2));    
+    Mz(L) = exp(-(((L-1)*delt-t_d)^2)/(2*sigma^2));
+    My(L) = exp(-(((L-1)*delt-t_d)^2)/(2*sigma^2));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for L = 1:Time % Time March
@@ -296,8 +300,10 @@ for L = 1:Time % Time March
                     (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
                     ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                        
                 case 'source'       
-                      E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
-                      E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);                    
+                      %E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
+                      %E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);        
+                      H_y(1,source_x,source_y) = -0.5*(delt/mu)*My(L);
+                      H_z(1,source_x,source_y) = -0.5*(delt/mu)*Mz(L);
                 case 'lower'
                     pml_e = e_bottom;                              
                     sigma_mx = 0;
@@ -306,7 +312,7 @@ for L = 1:Time % Time March
                     % Finite Difference Equation (4) from our notes
                     H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
                       (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
-                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...
+                      (2*mu/(2*mu+sigma_mx*delt))*H_z(2,i,j) - ...                      -Mz(
                       ((delt*sigma_mx)/(2*mu+sigma_mx*delt))*H_z(2,i,j);
                     % Finite Difference Equation (3) from our notes
                     H_y(1,i,j) = -1*((2*delt)/(delta*(2*mu+sigma_my*delt)))*...
@@ -355,9 +361,12 @@ for L = 1:Time % Time March
         end
     % Hard source condition
     % Hard source condition including PML region
-    E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
+    %E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
     % Hard source condition including PML region
-    E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);     
+    %E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);     
+    % Hard source condition
+    H_z(1,source_x,source_y) = -0.5*(delt/mu)*Mz(L);
+    H_y(1,source_x,source_y) = -0.5*(delt/mu)*My(L);
     end
     % Update the row vectors
     H_y(2,:,:) = H_y(1,:,:);   
