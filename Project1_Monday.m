@@ -175,7 +175,7 @@ for L = 1:Time % Time March
                     pml_e = e_bottom;                              
                     sigma_mx = 0;
                     sigma_ex = pml_e*sigma_mx/mu;
-                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    sigma_my = sigma_y/4; sigma_ey = pml_e*sigma_my/mu;                                                        
                     % Finite Difference Equation (4) from our notes
                     H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
                       (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
