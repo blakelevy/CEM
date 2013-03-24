@@ -66,7 +66,7 @@ for L = 1:Time % Time March
 %%%%%%%%%%%%% PML region of computation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% PML Left interface %%%%%%%%%%%%%%%%%%%%%%%                
             elseif((i <= pml_offset_x) && ...
-                    ((j >= pml_offset_y) && (j < pml_offset_y + num_of_nodes_y/2)))              
+                    ((j > pml_offset_y) && (j < pml_offset_y + num_of_nodes_y/2)))              
                 location = 'PML_Left_Bottom';
             elseif((i <= pml_offset_x) && ...
                     ((j < pml_offset_y+num_of_nodes_y) && (j >= pml_offset_y + num_of_nodes_y/2)))              
@@ -79,7 +79,7 @@ for L = 1:Time % Time March
                 location = 'PML_Left_Top_Corner';   
 %%%%%%%%%%%%%%%%%%%%%%%%% PML Right interface %%%%%%%%%%%%%%%%%%%%%%%                
             elseif((i >= pml_offset_x+num_of_nodes_x) && ...
-                    ((j >= pml_offset_y) && (j < pml_offset_y + num_of_nodes_y/2)))              
+                    ((j > pml_offset_y) && (j < pml_offset_y + num_of_nodes_y/2)))              
                 location = 'PML_Right_Bottom';
             elseif((i >= pml_offset_x+num_of_nodes_x) && ...
                     ((j < pml_offset_y+num_of_nodes_y) && (j >= pml_offset_y + num_of_nodes_y/2)))              
