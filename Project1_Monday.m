@@ -369,15 +369,21 @@ for L = 1:Time % Time March
     % Reshape E-field matrix for image output
     E = reshape(E_xy(1,:,:)+E_xz(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);    
     % Reshape E-field matrix for color bar ouput
-    color = reshape(E_xy(1,:,:)+E_xz(1,:,:),1,(num_of_nodes_x + 2*pml_offset_x)*(num_of_nodes_y + 2*pml_offset_y));
-    max_color_present = max(abs(color));
-    if max_color_present > max_color_past
-        c_max = max_color_present;
-        max_color_past = max_color_present;        
-    else
-        c_max = max_color_past;
-    end
-  
+%     color = reshape(E_xy(1,:,:)+E_xz(1,:,:),1,(num_of_nodes_x + 2*pml_offset_x)*(num_of_nodes_y + 2*pml_offset_y));
+%     max_color_present = max(abs(color));
+%     if max_color_present > max_color_past
+%         c_max = max_color_present;
+%         max_color_past = max_color_present;        
+%     else
+%         c_max = max_color_past;
+%     end
+%     max_color_present = max(abs(E(:)));
+%     if max_color_present > max_color_past
+%         c_max = max_color_present;
+%         max_color_past = max_color_present;
+%     else
+%         c_max = max_color_past;
+%     end
     
     
     
@@ -387,7 +393,7 @@ for L = 1:Time % Time March
     set(0, 'CurrentFigure', f1)
     %imagesc(abs(E_comp))
 %     imagesc(abs(E));
-    imagesc(abs(E),[0 675])
+    imagesc(abs(E),[0 300])
     colorbar
     set(0, 'CurrentFigure', f2)    
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x+num_of_nodes_x+pml_offset_x/2)),:,...
