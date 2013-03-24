@@ -294,7 +294,8 @@ for L = 1:Time % Time March
             %           E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);   
 
                 case 'source'   
-                      % source comment %    
+                      % source comment %
+                      % test comment 2 %    
                       E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
                       E_xy(1,source_x,source_y) = 0;
                       E_xz(1,source_x,source_y) = -1*(delt/e_top)*J(L);                    
