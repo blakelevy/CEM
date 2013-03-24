@@ -24,7 +24,7 @@ lambda_bottom = c_bottom/f; % wavelength of bottom slab
 num_of_wavelengths = 16; % propagate 16 wavelengths in X,Y-direction
 b = num_of_wavelengths*lambda_top; % Width of computational domain
 a = num_of_wavelengths*lambda_top; % Height of computational domain
-num_of_nodes_x = num_of_wavelengths*10;
+num_of_nodes_x = num_of_wavelengths*15;
 num_of_nodes_y = num_of_nodes_x;
 delx = b/num_of_nodes_x; % space discretization
 dely = a/num_of_nodes_y;
@@ -42,6 +42,7 @@ H_z = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y); 
 E_xz = zeros(size(E_x));
 E_xy = zeros(size(E_x));
 Time = 3*num_of_nodes_x; % total time steps
+max_color_past = 1; % color map adjust
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up Source %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 source_x = (2*pml_offset_x +num_of_nodes_x)/2; % x-position of source centered on X-axis
@@ -373,12 +374,26 @@ for L = 1:Time % Time March
     %E = reshape(E_x(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     % Reshape E-field matrix for image output
     E = reshape(E_xy(1,:,:)+E_xz(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);    
+    % Reshape E-field matrix for color bar ouput
+    color = reshape(E_xy(1,:,:)+E_xz(1,:,:),1,(num_of_nodes_x + 2*pml_offset_x)*(num_of_nodes_y + 2*pml_offset_y));
+    max_color_present = max(abs(color));
+    if max_color_present > max_color_past
+        c_max = max_color_present;
+        max_color_past = max_color_present;        
+    else
+        c_max = max_color_past;
+    end
+  
+    
+    
+    
     % E-field computational domain
     E_comp = E((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     set(0, 'CurrentFigure', f1)
     %imagesc(abs(E_comp))
-    imagesc(abs(E))
+%     imagesc(abs(E));
+    imagesc(abs(E),[0 675])
     colorbar
     set(0, 'CurrentFigure', f2)    
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x+num_of_nodes_x+pml_offset_x/2)),:,...
