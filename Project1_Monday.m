@@ -385,5 +385,6 @@ for L = 1:Time % Time March
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x+num_of_nodes_x+pml_offset_x/2)),:,...
         1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x/2),:));
     pause(.1)
-    % Blake Note
+    % Blake Note 
+    % Blake Second Note
 end
