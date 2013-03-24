@@ -293,9 +293,7 @@ for L = 1:Time % Time March
                         (H_z(1,i,j)-H_z(1,i-1,j)) + E_xz(2,i,j);
             %           E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);   
 
-                case 'source'   
-                      % source comment %
-                      % test comment 2 %    
+                case 'source'      
                       E_x(1,source_x,source_y) = -1*(delt/e_top)*J(L);
                       E_xy(1,source_x,source_y) = 0;
                       E_xz(1,source_x,source_y) = -1*(delt/e_top)*J(L);                    
@@ -385,6 +383,5 @@ for L = 1:Time % Time March
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x+num_of_nodes_x+pml_offset_x/2)),:,...
         1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x/2),:));
     pause(.1)
-    % Blake Note 
-    % Blake Second Note
+
 end
