@@ -5,8 +5,8 @@ clc;clear;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
 c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
-sigma_x = 1.1; % conductivity for PML region X (Y)-direction
-sigma_y = 1.1; % conductivity for PML region Y (Z)-direction
+sigma_x = 5; % conductivity for PML region X (Y)-direction
+sigma_y = 5; % conductivity for PML region Y (Z)-direction
 k = 1;
 epsilon = 1/(mu*c^2); % permitivity of free space
 e_top = epsilon; % relative permitivity of top slab (free space)
@@ -208,7 +208,11 @@ for L = 1:Time % Time March
                     pml_e = e_top;                              
                     sigma_mx = sigma_x;
                     sigma_ex = pml_e*sigma_mx/mu;
-                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;                                                        
+                    sigma_my = sigma_y; sigma_ey = pml_e*sigma_my/mu;
+                    sigma_my = sigma_my*((j-(pml_offset_y+num_of_nodes_y))/pml_offset_y)^2;
+                    sigma_mx = sigma_mx*((j-(pml_offset_y+num_of_nodes_y))/pml_offset_y)^2;
+                    sigma_ey = sigma_ey*((j-(pml_offset_y+num_of_nodes_y))/pml_offset_y)^2;
+                    sigma_ex = sigma_ex*((j-(pml_offset_y+num_of_nodes_y))/pml_offset_y)^2;                    
                     % Finite Difference Equation (4) from our notes
                     H_z(1,i,j) = ((2*delt)/(delta*(2*mu+sigma_mx*delt)))*...
                       (E_xz(2,i+1,j)-E_xz(2,i,j)+E_xy(2,i+1,j)-E_xy(2,i,j)) + ...
