@@ -402,7 +402,7 @@ for L = 1:Time % Time March
     set(0, 'CurrentFigure', f1)
     %imagesc(abs(E_comp))
 %     imagesc(abs(E));
-    imagesc(abs(E),[0 300])
+    imagesc(abs(E),[0 600])
     colorbar
     set(0, 'CurrentFigure', f2)    
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x+num_of_nodes_x+pml_offset_x/2)),:,...
