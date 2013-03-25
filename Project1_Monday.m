@@ -21,15 +21,15 @@ t_d = 8*sigma; % Allow for the pulse to be zero at t = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up geometry %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 lambda_top = c/f; % wavelength of top slab
 lambda_bottom = c_bottom/f; % wavelength of bottom slab
-num_of_wavelengths = 16; % propagate 16 wavelengths in X,Y-direction
+num_of_wavelengths = 20; % propagate 16 wavelengths in X,Y-direction
 b = num_of_wavelengths*lambda_top; % Width of computational domain
 a = num_of_wavelengths*lambda_top; % Height of computational domain
-num_of_nodes_x = num_of_wavelengths*15;
+num_of_nodes_x = num_of_wavelengths*10;
 num_of_nodes_y = num_of_nodes_x;
 delx = b/num_of_nodes_x; % space discretization
 dely = a/num_of_nodes_y;
 delta = dely;
-delt = delx/(sqrt(2)*c); % time discretization
+delt = .999*delx/(sqrt(2)*c); % time discretization
 pml_offset_x = 20; % additional thickness of boundary in X-direction
 pml_offset_y = 20; % additional thickness of boundary in Y-direction
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -300,10 +300,10 @@ for L = 1:Time % Time March
                     (2*pml_e/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j) - ...
                     ((delt*sigma_ex)/(2*pml_e+sigma_ex*delt))*E_xz(2,i,j);                        
                 case 'source'       
-                      %E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
-                      %E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);        
-                      H_y(1,source_x,source_y) = -0.5*(delt/mu)*My(L);
-                      H_z(1,source_x,source_y) = -0.5*(delt/mu)*Mz(L);
+                      E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
+                      E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);        
+%                       H_y(1,source_x,source_y) = -0.5*(delt/mu)*My(L);
+%                       H_z(1,source_x,source_y) = -0.5*(delt/mu)*Mz(L);
                 case 'lower'
                     pml_e = e_bottom;                              
                     sigma_mx = 0;
@@ -360,13 +360,13 @@ for L = 1:Time % Time March
     % test comment  
         end
     % Hard source condition
-    % Hard source condition including PML region
-    %E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
-    % Hard source condition including PML region
-    %E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);     
+%     Hard source condition including PML region
+    E_xy(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);
+%     Hard source condition including PML region
+    E_xz(1,source_x,source_y) = -0.5*(delt/e_top)*J(L);     
     % Hard source condition
-    H_z(1,source_x,source_y) = -0.5*(delt/mu)*Mz(L);
-    H_y(1,source_x,source_y) = -0.5*(delt/mu)*My(L);
+%     H_z(1,source_x,source_y) = -0.5*(delt/mu)*Mz(L);
+%     H_y(1,source_x,source_y) = -0.5*(delt/mu)*My(L);
     end
     % Update the row vectors
     H_y(2,:,:) = H_y(1,:,:);   
