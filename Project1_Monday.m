@@ -3,7 +3,7 @@
 clc;clear;
 %% Set up Parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
-MOVIE = VideoWriter('PML_BC_1.avi');
+MOVIE = VideoWriter('PEC_BC_Electric_source.avi');
 c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
 sigma_x = 11; % conductivity for PML region X (Y)-direction
@@ -32,8 +32,8 @@ delx = b/num_of_nodes_x; % space discretization
 dely = a/num_of_nodes_y;
 delta = dely;
 delt = .999*delx/(sqrt(2)*c); % time discretization
-pml_offset_x = 20; % additional thickness of boundary in X-direction
-pml_offset_y = 20; % additional thickness of boundary in Y-direction
+pml_offset_x = 0; % additional thickness of boundary in X-direction
+pml_offset_y = 0; % additional thickness of boundary in Y-direction
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up E,H,T, matrices%%%%%%%%%%%%%%%%%%%%%%
 E_xz = zeros(2,num_of_nodes_x + 2*pml_offset_x,num_of_nodes_y + 2*pml_offset_y);
@@ -552,8 +552,8 @@ for L = 1:floor(.9*Time) % Time March
 %     if L == floor(2*Time/3)
 %         save('fields_PEC.mat', 'E_comp', 'H_comp', 'Z_comp');
 %     end
-    R(L,:) = E(pml_offset_x,((pml_offset_x+1):(pml_offset_y+num_of_nodes_y)))...
-        ./E(pml_offset_x+1,((pml_offset_x+1):(pml_offset_y+num_of_nodes_y)));
+%     R(L,:) = E(pml_offset_x,((pml_offset_x+1):(pml_offset_y+num_of_nodes_y)))...
+%         ./E(pml_offset_x+1,((pml_offset_x+1):(pml_offset_y+num_of_nodes_y)));
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     E_store(L,:,:) = E_comp;
     set(0, 'CurrentFigure', f1)
