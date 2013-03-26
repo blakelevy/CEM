@@ -5,8 +5,8 @@ clc;clear;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
 c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
-sigma_x = 10; % conductivity for PML region X (Y)-direction
-sigma_y = 10; % conductivity for PML region Y (Z)-direction
+sigma_x = 11; % conductivity for PML region X (Y)-direction
+sigma_y = 11; % conductivity for PML region Y (Z)-direction
 k = 1;
 m = pi; % m-th degree PML grading
 epsilon = 1/(mu*c^2); % permitivity of free space
@@ -22,7 +22,7 @@ t_d = 8*sigma; % Allow for the pulse to be zero at t = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up geometry %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 lambda_top = c/f; % wavelength of top slab
 lambda_bottom = c_bottom/f; % wavelength of bottom slab
-num_of_wavelengths = 20; % propagate 16 wavelengths in X,Y-direction
+num_of_wavelengths = 16; % propagate 16 wavelengths in X,Y-direction
 b = num_of_wavelengths*lambda_top; % Width of computational domain
 a = num_of_wavelengths*lambda_top; % Height of computational domain
 num_of_nodes_x = num_of_wavelengths*10;
@@ -52,6 +52,7 @@ E_store = zeros(Time,num_of_nodes_x,num_of_nodes_y);
 J = zeros(1,Time); % create source in time-domain
 Mz = zeros(1,Time); % create source in time-domain
 My = zeros(1,Time);
+R = zeros(Time,num_of_nodes_y);
 f1 = figure(1);
 f2 = figure(2);
 for L = 2:Time
@@ -520,8 +521,8 @@ for L = 1:Time % Time March
     % Reshape E-field matrix for image output
     E = reshape(E_xy(1,:,:)+E_xz(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);    
     H = reshape(sqrt((H_y(1,:,:).^2)+ (H_z(1,:,:).^2)),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
-
-    
+    Z = abs(E)./abs(H);
+   
     % Reshape E-field matrix for color bar ouput
     color = reshape(E_xy(1,:,:)+E_xz(1,:,:),1,(num_of_nodes_x + 2*pml_offset_x)*(num_of_nodes_y + 2*pml_offset_y));
     max_color_present = max(abs(color));
@@ -543,12 +544,19 @@ for L = 1:Time % Time March
     
     % E-field computational domain
     E_comp = E((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
+    H_comp = H((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
+    Z_comp = Z((pml_offset_x+1:(num_of_nodes_x + pml_offset_y)),(pml_offset_y+1:(num_of_nodes_y + pml_offset_y)));
+%     if L == floor(2*Time/3)
+%         save('fields_PEC.mat', 'E_comp', 'H_comp', 'Z_comp');
+%     end
+    R(L,:) = E(pml_offset_x,((pml_offset_x+1):(pml_offset_y+num_of_nodes_y)))...
+        ./E(pml_offset_x+1,((pml_offset_x+1):(pml_offset_y+num_of_nodes_y)));
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     E_store(L,:,:) = E_comp;
     set(0, 'CurrentFigure', f1)
-    %imagesc(abs(E_comp))
-%     imagesc(abs(E));
-    imagesc(abs(E)/max_color_present)
+    imagesc(abs(E_comp)/max(abs(E_comp(:))))
+%     imagesc(Z);
+%     imagesc(abs(E_comp)/max_color_present)
 %     imagesc(abs(E), [0 .25])
     colorbar
     set(0, 'CurrentFigure', f2)    
