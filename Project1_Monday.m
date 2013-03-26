@@ -3,6 +3,7 @@
 clc;clear;
 %% Set up Parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% set up field characteristics%%%%%%%%%%%%%%%%
+MOVIE = VideoWriter('PML_BC_1.avi');
 c = 299792458; % speed of light in free space
 mu = (4*pi)*1e-7; % permiability of free space
 sigma_x = 11; % conductivity for PML region X (Y)-direction
@@ -61,7 +62,9 @@ for L = 2:Time
     My(L) = exp(-(((L-1)*delt-t_d)^2)/(2*sigma^2));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for L = 1:Time % Time March
+open(MOVIE);
+for L = 1:floor(.9*Time) % Time March
+
     tic; % start timer
 %     for j = 1:num_of_nodes_y + 2*pml_offset_y % Z-direction (up/down)
 %         for i = 1:num_of_nodes_x + 2*pml_offset_x % Y- direction (left/right)
@@ -554,14 +557,18 @@ for L = 1:Time % Time March
     H_y_latest = reshape(H_y(1,:,:),[(num_of_nodes_x + 2*pml_offset_x) (num_of_nodes_y + 2*pml_offset_y)]);
     E_store(L,:,:) = E_comp;
     set(0, 'CurrentFigure', f1)
-    imagesc(abs(E_comp)/max(abs(E_comp(:))))
+    imagesc(abs(E)/max(abs(E(:))))
+    frame = getframe;
+    writeVideo(MOVIE,frame);    
 %     imagesc(Z);
 %     imagesc(abs(E_comp)/max_color_present)
 %     imagesc(abs(E), [0 .25])
-    colorbar
+%     colorbar;
+    
     set(0, 'CurrentFigure', f2)    
     plot(1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x+num_of_nodes_x/2),:))%,...
 %         1:(num_of_nodes_y+2*pml_offset_y), E(floor(pml_offset_x/2),:));
     pause(.1)
 
 end
+close(MOVIE);
